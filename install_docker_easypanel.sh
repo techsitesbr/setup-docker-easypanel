@@ -54,12 +54,45 @@ check_ubuntu() {
     fi
 }
 
+# Função para atualizar sistema
+update_system() {
+    log "🔄 Atualizando sistema Ubuntu..."
+    echo ""
+    
+    # Atualizar lista de pacotes
+    log "1/2 - Atualizando lista de pacotes (apt update)..."
+    apt update -y
+    
+    if [ $? -eq 0 ]; then
+        echo -e "   ${GREEN}✓${RESET} apt update concluído"
+    else
+        error "Falha no apt update"
+        return 1
+    fi
+    
+    # Atualizar pacotes
+    log "2/2 - Atualizando pacotes (apt upgrade)..."
+    apt upgrade -y
+    
+    if [ $? -eq 0 ]; then
+        echo -e "   ${GREEN}✓${RESET} apt upgrade concluído"
+        log "✅ Sistema Ubuntu atualizado com sucesso!"
+    else
+        error "Falha no apt upgrade"
+        return 1
+    fi
+    
+    echo ""
+    sleep 2
+}
+
 # Função principal de instalação
 install_easypanel_official() {
     log "🚀 Iniciando instalação do Easypanel via script oficial..."
     echo ""
     
     log "📋 Este processo irá:"
+    echo -e "   ${GREEN}✓${RESET} Atualizar sistema Ubuntu"
     echo -e "   ${GREEN}✓${RESET} Instalar Docker automaticamente"
     echo -e "   ${GREEN}✓${RESET} Configurar Docker Swarm"
     echo -e "   ${GREEN}✓${RESET} Instalar Easypanel"
@@ -75,6 +108,10 @@ install_easypanel_official() {
     fi
     
     echo ""
+    
+    # Atualizar sistema primeiro
+    update_system
+    
     log "🔄 Executando: curl -sSL https://get.easypanel.io | sh"
     echo ""
     
@@ -240,7 +277,8 @@ ${RESET}"
     echo -e "${BLUE}├─────────────────────────────────────────────────────────────────────┤${RESET}"
     echo -e "${BLUE}│  ${WHITE}1${RESET} - Instalação Automática (Recomendado)                        │"
     echo -e "${BLUE}│  ${WHITE}2${RESET} - Instalação Manual (Passo a passo)                          │"
-    echo -e "${BLUE}│  ${WHITE}3${RESET} - Verificar Status dos Serviços                              │"
+    echo -e "${BLUE}│  ${WHITE}3${RESET} - Apenas Atualizar Sistema Ubuntu                            │"
+    echo -e "${BLUE}│  ${WHITE}4${RESET} - Verificar Status dos Serviços                              │"
     echo -e "${BLUE}├─────────────────────────────────────────────────────────────────────┤${RESET}"
     echo -e "${BLUE}│  ${RED}0${RESET} - Sair                                                       │"
     echo -e "${BLUE}└─────────────────────────────────────────────────────────────────────┘${RESET}"
@@ -271,6 +309,12 @@ main() {
                 read
                 ;;
             3)
+                update_system
+                echo ""
+                echo -e "${YELLOW}Pressione Enter para continuar...${RESET}"
+                read
+                ;;
+            4)
                 check_status
                 echo ""
                 echo -e "${YELLOW}Pressione Enter para continuar...${RESET}"

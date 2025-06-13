@@ -1,126 +1,4 @@
-instalacao_completa_automatica() {
-    nome_instalando
-    echo -e "$azul🚀 Instalação Completa (Docker + Easypanel)...$reset"
-    echo ""
-    
-    echo -e "$verde📋 Usando o script oficial do Easypanel:$reset"
-    echo -e "$branco   curl -sSL https://get.easypanel.io | sh$reset"
-    echo ""
-    echo -e "$amarelo⚠️  Este comando fará automaticamente:$reset"
-    echo -e "$verde   ✅ Instalar Docker$reset"
-    echo -e "$verde   ✅ Configurar Docker Swarm$reset"
-    echo -e "$verde   ✅ Instalar Easypanel$reset"
-    echo -e "$verde   ✅ Configurar todas as dependências$reset"
-    echo ""
-    
-    echo -e "$azul🚀 Executando instalação automática...$reset"
-    curl -sSL https://get.easypanel.io | sh
-    
-    if [ $? -eq 0 ]; then
-        echo ""
-        echo -e "$verde🎉 INSTALAÇÃO COMPLETA REALIZADA COM SUCESSO! 🎉$reset"
-        echo -e "$azul🌐 Acesse: http://$(curl -s ifconfig.me)$reset"
-        echo -e "$amarelo⚠️  Configure email e senha no primeiro acesso$reset"
-        echo -e "$verde📝 Docker, Docker Swarm e Easypanel foram instalados automaticamente!$reset"
-        
-        # Aguardar inicialização
-        echo ""
-        echo -e "$azul⏱️  Aguardando inicialização dos serviços...$reset"
-        sleep 30
-        
-        echo ""
-        echo -e "$azul💡 Dicas importantes:$reset"
-        echo -e "$branco   • Use a opção 9 para verificar se tudo está funcionando$reset"
-        echo -e "$branco   • Para SSL, configure diretamente no painel do Easypanel$reset"
-        echo -e "$branco   • Para domínios, aponte seu DNS para: $(curl -s ifconfig.me)$reset"
-    else
-        echo ""
-        erro "Falha na instalação automática. Tente a instalação manual (opções 1-4)."
-    fi
-    
-    sleep 5
-}instalar_easypanel() {
-    nome_instalando
-    echo -e "$azul🎛️  Instalando Easypanel...$reset"
-    echo ""
-    
-    echo -e "$verde📋 Comando executado:$reset"
-    echo -e "$branco   docker run --rm -it \\$reset"
-    echo -e "$branco     -v /etc/easypanel:/etc/easypanel \\$reset"
-    echo -e "$branco     -v /var/run/docker.sock:/var/run/docker.sock:ro \\$reset"
-    echo -e "$branco     easypanel/easypanel setup$reset"
-    echo ""
-    
-    # Verificar se Docker está instalado e rodando
-    if ! command -v docker &> /dev/null; then
-        erro "Docker não está instalado! Execute a opção 2 primeiro."
-        return 1
-    fi
-    
-    if ! systemctl is-active --quiet docker; then
-        erro "Docker não está rodando! Execute: systemctl start docker"
-        return 1
-    fi
-    
-    echo "1/4 - [ $verde OK $reset ] - Docker detectado e rodando"
-    
-    # Verificar se as portas 80 e 443 estão livres
-    if netstat -tuln 2>/dev/null | grep -q ':80 '; then
-        echo -e "$amarelo⚠️  Porta 80 está em uso. Parando serviços...$reset"
-        systemctl stop nginx apache2 > /dev/null 2>&1
-    fi
-    
-    if netstat -tuln 2>/dev/null | grep -q ':443 '; then
-        echo -e "$amarelo⚠️  Porta 443 está em uso. Parando serviços...$reset"
-        systemctl stop nginx apache2 > /dev/null 2>&1
-    fi
-    
-    echo "2/4 - [ $verde OK $reset ] - Verificações pré-instalação"
-    
-    # Método oficial do Easypanel
-    echo -e "$azul🚀 Executando instalação do Easypanel...$reset"
-    echo ""
-    
-    docker run --rm -it \
-        -v /etc/easypanel:/etc/easypanel \
-        -v /var/run/docker.sock:/var/run/docker.sock:ro \
-        easypanel/easypanel setup
-    
-    if [ $? -eq 0 ]; then
-        echo ""
-        echo "3/4 - [ $verde OK $reset ] - Instalação Easypanel concluída"
-    else
-        echo ""
-        echo "3/4 - [ $vermelho ERRO $reset ] - Falha na instalação"
-        erro "Falha ao instalar Easypanel"
-        return 1
-    fi
-    
-    # Aguardar alguns segundos para o serviço inicializar
-    echo "4/4 - [ $azul WAIT $reset ] - Aguardando inicialização dos serviços..."
-    sleep 20
-    
-    # Verificar se o serviço está rodando
-    if docker service ls 2>/dev/null | grep -q easypanel; then
-        echo "     [ $verde OK $reset ] - Serviço Easypanel ativo (Swarm mode)"
-    elif docker ps | grep -q easypanel; then
-        echo "     [ $verde OK $reset ] - Container Easypanel ativo"
-    else
-        echo "     [ $amarelo WAIT $reset ] - Ainda inicializando... Aguarde mais alguns minutos."
-    fi
-    
-    echo ""
-    echo -e "$verde🎉 EASYPANEL INSTALADO COM SUCESSO! 🎉$reset"
-    echo -e "$azul🌐 Acesse: http://$(curl -s ifconfig.me)$reset"
-    echo -e "$amarelo⚠️  Configure email e senha no primeiro acesso$reset"
-    echo -e "$verde📝 Docker Swarm foi configurado automaticamente pelo Easypanel!$reset"
-    echo ""
-    echo -e "$azul💡 Dicas importantes:$reset"
-    echo -e "$branco   • Use a opção 9 para verificar se tudo está funcionando$reset"
-    echo -e "$branco   • Para SSL, configure diretamente no painel do Easypanel$reset"
-    echo -e "$branco   • Para domínios, aponte seu DNS para: $(curl -s ifconfig.me)$reset"
-    sleep 5
-}#!/bin/bash
+#!/bin/bash
 
 ## // ## // ## // ## // ## // ## // ## // ## //## // ## // ## // ## // ## // ## // ## // ## // ##
 ##                                    TECHSITES  - DOCKER SETUP                             ##
@@ -325,42 +203,168 @@ instalar_docker() {
     echo -e "$azul🐳 Instalando Docker (método oficial)...$reset"
     echo ""
     
-    # Usar o método oficial do Docker (mesmo que o Easypanel recomenda)
-    curl -sSL https://get.docker.com | sh > /dev/null 2>&1
+    echo -e "$verde📋 Comando executado:$reset"
+    echo -e "$branco   curl -sSL https://get.docker.com | sh$reset"
+    echo ""
+    
+    # Usar o método oficial do Docker
+    curl -sSL https://get.docker.com | sh
+    
     if [ $? -eq 0 ]; then
-        echo "1/3 - [ $verde OK $reset ] - Instalação Docker via script oficial"
+        echo ""
+        echo "1/3 - [ $verde OK $reset ] - Instalação Docker concluída com sucesso"
     else
-        echo "1/3 - [ $vermelho ERRO $reset ] - Falha no script oficial, tentando método manual..."
-        
-        # Fallback para método manual
-        apt-get remove -y docker docker-engine docker.io containerd runc > /dev/null 2>&1
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg > /dev/null 2>&1
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        apt update > /dev/null 2>&1
-        apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin > /dev/null 2>&1
-        echo "1/3 - [ $verde OK $reset ] - Instalação manual concluída"
+        echo ""
+        echo "1/3 - [ $vermelho ERRO $reset ] - Falha no script oficial"
+        erro "Falha ao instalar Docker"
+        return 1
     fi
     
     # Inicia e habilita Docker
     systemctl start docker
     systemctl enable docker > /dev/null 2>&1
-    echo "2/3 - [ $verde OK $reset ] - Configurando serviço Docker"
+    echo "2/3 - [ $verde OK $reset ] - Serviço Docker iniciado e habilitado"
     
     # Adicionar usuário atual ao grupo docker (se não for root)
     if [ "$SUDO_USER" ]; then
         usermod -aG docker $SUDO_USER > /dev/null 2>&1
-        echo "3/3 - [ $verde OK $reset ] - Configurando permissões de usuário"
+        echo "3/3 - [ $verde OK $reset ] - Usuário adicionado ao grupo docker"
     else
         echo "3/3 - [ $amarelo SKIP $reset ] - Executando como root"
     fi
     
     echo ""
-    echo -e "$verde✅ Docker instalado: $(docker --version)$reset"
-    echo -e "$amarelo⚠️  IMPORTANTE: O Easypanel irá configurar o Docker Swarm automaticamente$reset"
-    sleep 2
+    echo -e "$verde✅ Docker instalado com sucesso!$reset"
+    echo -e "$azul📋 Versão: $(docker --version)$reset"
+    echo -e "$amarelo➡️  Próximo passo: Execute a opção 4 para instalar o Easypanel$reset"
+    sleep 3
 }
 
+instalar_easypanel() {
+    nome_instalando
+    echo -e "$azul🎛️  Instalando Easypanel...$reset"
+    echo ""
+    
+    echo -e "$verde📋 Comando executado:$reset"
+    echo -e "$branco   docker run --rm -it \\$reset"
+    echo -e "$branco     -v /etc/easypanel:/etc/easypanel \\$reset"
+    echo -e "$branco     -v /var/run/docker.sock:/var/run/docker.sock:ro \\$reset"
+    echo -e "$branco     easypanel/easypanel setup$reset"
+    echo ""
+    
+    # Verificar se Docker está instalado e rodando
+    if ! command -v docker &> /dev/null; then
+        erro "Docker não está instalado! Execute a opção 2 primeiro."
+        return 1
+    fi
+    
+    if ! systemctl is-active --quiet docker; then
+        erro "Docker não está rodando! Execute: systemctl start docker"
+        return 1
+    fi
+    
+    echo "1/4 - [ $verde OK $reset ] - Docker detectado e rodando"
+    
+    # Verificar se as portas 80 e 443 estão livres
+    if netstat -tuln 2>/dev/null | grep -q ':80 '; then
+        echo -e "$amarelo⚠️  Porta 80 está em uso. Parando serviços...$reset"
+        systemctl stop nginx apache2 > /dev/null 2>&1
+    fi
+    
+    if netstat -tuln 2>/dev/null | grep -q ':443 '; then
+        echo -e "$amarelo⚠️  Porta 443 está em uso. Parando serviços...$reset"
+        systemctl stop nginx apache2 > /dev/null 2>&1
+    fi
+    
+    echo "2/4 - [ $verde OK $reset ] - Verificações pré-instalação"
+    
+    # Método oficial do Easypanel
+    echo -e "$azul🚀 Executando instalação do Easypanel...$reset"
+    echo ""
+    
+    docker run --rm -it \
+        -v /etc/easypanel:/etc/easypanel \
+        -v /var/run/docker.sock:/var/run/docker.sock:ro \
+        easypanel/easypanel setup
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "3/4 - [ $verde OK $reset ] - Instalação Easypanel concluída"
+    else
+        echo ""
+        echo "3/4 - [ $vermelho ERRO $reset ] - Falha na instalação"
+        erro "Falha ao instalar Easypanel"
+        return 1
+    fi
+    
+    # Aguardar alguns segundos para o serviço inicializar
+    echo "4/4 - [ $azul WAIT $reset ] - Aguardando inicialização dos serviços..."
+    sleep 20
+    
+    # Verificar se o serviço está rodando
+    if docker service ls 2>/dev/null | grep -q easypanel; then
+        echo "     [ $verde OK $reset ] - Serviço Easypanel ativo (Swarm mode)"
+    elif docker ps | grep -q easypanel; then
+        echo "     [ $verde OK $reset ] - Container Easypanel ativo"
+    else
+        echo "     [ $amarelo WAIT $reset ] - Ainda inicializando... Aguarde mais alguns minutos."
+    fi
+    
+    echo ""
+    echo -e "$verde🎉 EASYPANEL INSTALADO COM SUCESSO! 🎉$reset"
+    echo -e "$azul🌐 Acesse: http://$(curl -s ifconfig.me)$reset"
+    echo -e "$amarelo⚠️  Configure email e senha no primeiro acesso$reset"
+    echo -e "$verde📝 Docker Swarm foi configurado automaticamente pelo Easypanel!$reset"
+    echo ""
+    echo -e "$azul💡 Dicas importantes:$reset"
+    echo -e "$branco   • Use a opção 9 para verificar se tudo está funcionando$reset"
+    echo -e "$branco   • Para SSL, configure diretamente no painel do Easypanel$reset"
+    echo -e "$branco   • Para domínios, aponte seu DNS para: $(curl -s ifconfig.me)$reset"
+    sleep 5
+}
 
+instalacao_completa_automatica() {
+    nome_instalando
+    echo -e "$azul🚀 Instalação Completa (Docker + Easypanel)...$reset"
+    echo ""
+    
+    echo -e "$verde📋 Usando o script oficial do Easypanel:$reset"
+    echo -e "$branco   curl -sSL https://get.easypanel.io | sh$reset"
+    echo ""
+    echo -e "$amarelo⚠️  Este comando fará automaticamente:$reset"
+    echo -e "$verde   ✅ Instalar Docker$reset"
+    echo -e "$verde   ✅ Configurar Docker Swarm$reset"
+    echo -e "$verde   ✅ Instalar Easypanel$reset"
+    echo -e "$verde   ✅ Configurar todas as dependências$reset"
+    echo ""
+    
+    echo -e "$azul🚀 Executando instalação automática...$reset"
+    curl -sSL https://get.easypanel.io | sh
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo -e "$verde🎉 INSTALAÇÃO COMPLETA REALIZADA COM SUCESSO! 🎉$reset"
+        echo -e "$azul🌐 Acesse: http://$(curl -s ifconfig.me)$reset"
+        echo -e "$amarelo⚠️  Configure email e senha no primeiro acesso$reset"
+        echo -e "$verde📝 Docker, Docker Swarm e Easypanel foram instalados automaticamente!$reset"
+        
+        # Aguardar inicialização
+        echo ""
+        echo -e "$azul⏱️  Aguardando inicialização dos serviços...$reset"
+        sleep 30
+        
+        echo ""
+        echo -e "$azul💡 Dicas importantes:$reset"
+        echo -e "$branco   • Use a opção 9 para verificar se tudo está funcionando$reset"
+        echo -e "$branco   • Para SSL, configure diretamente no painel do Easypanel$reset"
+        echo -e "$branco   • Para domínios, aponte seu DNS para: $(curl -s ifconfig.me)$reset"
+    else
+        echo ""
+        erro "Falha na instalação automática. Tente a instalação manual (opções 1-4)."
+    fi
+    
+    sleep 5
+}
 
 adicionar_funcoes_easypanel() {
     nome_instalando
@@ -409,48 +413,6 @@ EOF
     echo -e "$verde✅ Script de comandos salvo em: /root/easypanel-commands.sh$reset"
     
     sleep 5
-}
-
-instalar_docker() {
-    nome_instalando
-    echo -e "$azul🐳 Instalando Docker (método oficial)...$reset"
-    echo ""
-    
-    echo -e "$verde📋 Comando executado:$reset"
-    echo -e "$branco   curl -sSL https://get.docker.com | sh$reset"
-    echo ""
-    
-    # Usar o método oficial do Docker
-    curl -sSL https://get.docker.com | sh
-    
-    if [ $? -eq 0 ]; then
-        echo ""
-        echo "1/3 - [ $verde OK $reset ] - Instalação Docker concluída com sucesso"
-    else
-        echo ""
-        echo "1/3 - [ $vermelho ERRO $reset ] - Falha no script oficial"
-        erro "Falha ao instalar Docker"
-        return 1
-    fi
-    
-    # Inicia e habilita Docker
-    systemctl start docker
-    systemctl enable docker > /dev/null 2>&1
-    echo "2/3 - [ $verde OK $reset ] - Serviço Docker iniciado e habilitado"
-    
-    # Adicionar usuário atual ao grupo docker (se não for root)
-    if [ "$SUDO_USER" ]; then
-        usermod -aG docker $SUDO_USER > /dev/null 2>&1
-        echo "3/3 - [ $verde OK $reset ] - Usuário adicionado ao grupo docker"
-    else
-        echo "3/3 - [ $amarelo SKIP $reset ] - Executando como root"
-    fi
-    
-    echo ""
-    echo -e "$verde✅ Docker instalado com sucesso!$reset"
-    echo -e "$azul📋 Versão: $(docker --version)$reset"
-    echo -e "$amarelo➡️  Próximo passo: Execute a opção 4 para instalar o Easypanel$reset"
-    sleep 3
 }
 
 configurar_ssl_automatico() {
@@ -555,8 +517,6 @@ EOF
     sleep 3
 }
 
-
-
 verificar_servicos() {
     nome_instalando
     echo -e "$azul🔍 Verificando status dos serviços...$reset"
@@ -629,6 +589,22 @@ verificar_servicos() {
     sleep 5
 }
 
+instalacao_completa() {
+    atualizar_sistema
+    instalar_dependencias
+    configurar_firewall
+    instalar_docker
+    instalar_easypanel
+    configurar_ssl_automatico
+    
+    echo ""
+    echo -e "$verde🎉 Instalação completa finalizada!$reset"
+    echo -e "$azul🌐 Easypanel: http://$(curl -s ifconfig.me)$reset"
+    echo -e "$amarelo💡 Para usar domínio, execute a opção 7 do menu$reset"
+    echo -e "$amarelo📝 Docker Swarm foi configurado automaticamente pelo Easypanel$reset"
+    sleep 5
+}
+
 ## // ## // ## // ## // ## // ## // ## // ## //## // ## // ## // ## // ## // ## // ## // ## // ##
 ##                                        MENU PRINCIPAL                                      ##
 ## // ## // ## // ## // ## // ## // ## // ## //## // ## // ## // ## // ## // ## // ## // ## // ##
@@ -656,24 +632,6 @@ mostrar_menu() {
     echo -ne "$amarelo Escolha uma opção: $reset"
 }
 
-instalacao_completa() {
-    atualizar_sistema
-    instalar_dependencias
-    configurar_firewall
-    instalar_docker
-    instalar_easypanel
-    configurar_ssl_automatico
-    
-    echo ""
-    echo -e "$verde🎉 Instalação completa finalizada!$reset"
-    echo -e "$azul🌐 Easypanel: http://$(curl -s ifconfig.me)$reset"
-    echo -e "$amarelo💡 Para usar domínio, execute a opção 7 do menu$reset"
-    echo -e "$amarelo📝 Docker Swarm foi configurado automaticamente pelo Easypanel$reset"
-    sleep 5
-}
-
-
-
 ## // ## // ## // ## // ## // ## // ## // ## //## // ## // ## // ## // ## // ## // ## // ## // ##
 ##                                         MAIN SCRIPT                                        ##
 ## // ## // ## // ## // ## // ## // ## // ## //## // ## // ## // ## // ## // ## // ## // ## // ##
@@ -698,10 +656,19 @@ while true; do
             configurar_firewall
             ;;
         4)
-            instalar_easypanel
+            adicionar_funcoes_easypanel
             ;;
         5)
-            instalacao_completa_automatica
+            instalar_easypanel
+            ;;
+        6)
+            configurar_ssl_automatico
+            ;;
+        7)
+            configurar_ssl_dominio
+            ;;
+        8)
+            instalacao_completa
             ;;
         9)
             verificar_servicos
